@@ -1,0 +1,48 @@
+/*---- Main containers ----*/
+body {
+	background-color: #ddd;
+	font-family: 'Roboto', sans-serif;
+}
+.container-fluid {
+	width: 95%;
+	margin-top: 20px;
+}
+
+/*---- Chart + container ----*/
+#chart {
+	height: 400px;
+	width: 100%;
+	margin: 20px auto 20px auto;
+	padding: 5px;
+}
+
+/*---- Stock boxes and selector ----*/
+.stock-box {
+	border-left: 4px solid steelblue;
+	background-color: #fff;
+	padding: 6px;
+	margin: 8px;
+	height: 80px;
+}
+.x-button {
+	float: right;
+	user-select: none;
+	cursor: pointer;
+	margin-right: 4px;
+}
+.input-group {
+	padding: 10px;
+	margin-bottom: 15px;
+}
+.stock-box p {
+	margin-left: 12px;
+	margin-top: 5px;
+}
+.code {
+	font-size: 2rem;
+	font-weight: bold;
+}
+.name {
+	font-size: 1.5rem;
+	color: #777;
+}
