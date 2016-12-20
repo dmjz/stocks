@@ -6,7 +6,6 @@ var wsServer = new WebSocketServer({ server: server });
 var request = require('request');
 
 app.use('/public', express.static(process.cwd() + '/public'));
-app.use('/app', express.static(process.cwd() + '/app'));
 
 app.route('/') 
     .get(function (req, res) {
