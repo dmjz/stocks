@@ -26,8 +26,18 @@ function onSendError(error) {
 //  company: <company name>
 // 	data: <array of chart data>,
 //	tooltip: { valueDecimals: 2 } 
+//  color: <a color string from colorList>
 // }
 var seriesList = [];
+var colorList = ['#4292f4', '#f788ee', '#5bffad', '#ff4444', '#ffaf26', '#1f1533'];
+var colorCounter = -1;
+function getColor () {
+    colorCounter++;
+    if (colorCounter >= colorList.length) {
+        colorCounter = 0;
+    }
+    return colorList[colorCounter];
+}
 
 function removeSeries (company) {
 	var ind = -1;
@@ -98,6 +108,14 @@ wsServer.on('connection', function connection (ws) {
         // clientInput format: 
         // { symbol: <stock symbol>, name: <company name> }
         
+        // Make sure this stock isn't already in seriesList.
+        for (var i = 0; i < seriesList.length; i++) {
+    		if (seriesList[i].company === clientInput.name) {
+    		    sendError('Stock is already in seriesList');
+    			return;
+    		}
+        }
+        
         // Compose API input.
         var chartDataInput = {
 			Normalized: false,
@@ -142,7 +160,8 @@ wsServer.on('connection', function connection (ws) {
         		name: element.Symbol,
         		company: clientInput.name,
         		data: chartData,
-        		tooltip: { valueDecimals: 2 }
+        		tooltip: { valueDecimals: 2 },
+        		color: getColor()
         	};
         	// Add data to seriesList and return to ALL clients
         	seriesList.push(newSeries);

@@ -47,7 +47,8 @@ ws.onmessage = function (event) {
 // { name: <stock symbol>,
 //	 company: <company name>,
 // 	 data: <array of chart data>,
-//	 tooltip: { valueDecimals: 2 } }
+//	 tooltip: { valueDecimals: 2 },
+//	 color: <a color string> }
 var seriesList = [];
 
 // Draw chart from seriesList
