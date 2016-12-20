@@ -47,7 +47,7 @@ wsServer.on('connection', function connection (ws) {
     // Client expects stringified object 
     // { type: <see validTypes>, 
     //   message: <content> }
-    var validTypes = ['error', 'message', 'lookup', 'add', 'remove'];
+    var validTypes = ['error', 'message', 'lookup', 'add', 'remove', 'load'];
     function sendError (msg) {
         ws.send(JSON.stringify({
             type: 'error',
@@ -64,6 +64,18 @@ wsServer.on('connection', function connection (ws) {
             message: msg
         }), onSendError);
     }
+    function broadcast (msg, type) {
+        if (validTypes.indexOf(type) < 0) {
+            console.log('Bad type passed to broadcast: ' + type);
+            return;
+        }
+        wsServer.clients.forEach(function (client) {
+           client.send(JSON.stringify({
+               type: type,
+               message: msg
+           }), onSendError); 
+        });
+    }
     
     function markitLookup (input) {
         // Look up list of stocks.
@@ -71,6 +83,10 @@ wsServer.on('connection', function connection (ws) {
         request({ method: 'GET', url: url }, function (error, response, body) {
             if (error) {
                 sendError('Lookup data not received');
+                return;
+            }
+            if (body[0] !== '[')  {
+                sendError('Markit API lookup error');
                 return;
             }
             
@@ -103,10 +119,15 @@ wsServer.on('connection', function connection (ws) {
                 sendError('Chart data not received');
                 return;
             }
-            var data = JSON.parse(body);
-            var element = data.Elements[0];
+            try {
+                var data = JSON.parse(body);
+                var element = data.Elements[0];
+            } catch (e) {
+                sendError('Unexpected body in Markit chart data call');
+                return;
+            }
             if (!element) {
-                sendError('Chart data not received');
+                sendError('No data for that name');
                 return;
             }
             // Process data.
@@ -123,9 +144,9 @@ wsServer.on('connection', function connection (ws) {
         		data: chartData,
         		tooltip: { valueDecimals: 2 }
         	};
-        	// Add data to seriesList and return to client
+        	// Add data to seriesList and return to ALL clients
         	seriesList.push(newSeries);
-        	sendGood(JSON.stringify(newSeries), 'add');
+        	broadcast(JSON.stringify(newSeries), 'add');
         });
     }
     
@@ -143,12 +164,12 @@ wsServer.on('connection', function connection (ws) {
                 markitLookup(msgParsed.data);
                 break;
             case 'add':
-                console.log('add requested');
                 markitChart(msgParsed.data);
                 break;
             case 'remove':
                 if (removeSeries(msgParsed.data)) {
                     sendGood('Series removed', 'message');
+                    broadcast(msgParsed.data, 'remove');
                 } else {
                     sendError('Series to remove was not found');
                 }
@@ -159,7 +180,8 @@ wsServer.on('connection', function connection (ws) {
         }
     });
     
-    sendGood('connected', 'message');
+    // On connection, send stringified seriesList for client to load.
+    sendGood(JSON.stringify(seriesList), 'load');
 });
 
 server.listen(process.env.PORT, process.env.IP, function () {

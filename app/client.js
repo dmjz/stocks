@@ -27,9 +27,15 @@ ws.onmessage = function (event) {
     		stockDataCallback(JSON.parse(response.message));
     		break;
     	case 'remove':
-    		//call removeSeries AND kill stock box
-    		//one way to do this would be to loop through x-buttons, check for the right company,
-    		//then call that x-button's click handler.
+    		console.log('Server asked to remove: ' + response.message);
+    		if (removeSeries(response.message, false)) {
+    			console.log('Series removed');
+    			drawChart();
+    		} else { console.log('Series not found'); }
+    		removeStockBox(response.message);
+    		break;
+    	case 'load':
+    		load(response.message);
     		break;
     	default:
     		console.log('Invalid response type: ' + response.type);
@@ -45,7 +51,7 @@ ws.onmessage = function (event) {
 var seriesList = [];
 
 // Draw chart from seriesList
-function drawChart() {
+function drawChart () {
 	Highcharts.stockChart('chart', {
 		chart: {
 			spacingLeft: 30,
@@ -56,13 +62,38 @@ function drawChart() {
 	});
 }
 
+// Load seriesList from server's data
+function load (data) {
+	seriesList = JSON.parse(data);
+	for (var i = 0; i < seriesList.length; i++) {
+		$('#stocks').append(
+			'<div class="col-xs-12 col-sm-4"><div class="stock-box">' +
+					'<p><span class="code">' + seriesList[i].name + '</span><span class="x-button"><strong>x</strong></span></p>' +
+				'<p class="name">' + seriesList[i].company + '</p>' +	
+			'</div></div>'
+		);
+	}
+	$('.x-button').on('click', function () {
+		var xButton = $(this);
+		if (removeSeries(xButton.parent().siblings('.name').text(), true)) {
+			drawChart();
+		}
+		// Remove box regardless if series was found.
+		xButton.parent().parent().parent().remove();
+	});
+	drawChart();
+}
+
 
 // Return true if series removed
-function removeSeries(company) {
-	ws.send(JSON.stringify({
-		operation: 'remove',
-		data: company
-	}));
+function removeSeries (company, update) {
+	// If update, tell server to remove series.
+	if (update) {
+		ws.send(JSON.stringify({
+			operation: 'remove',
+			data: company
+		}));
+	}
 	var ind = -1;
 	for (var i = 0; i < seriesList.length; i++) {
 		if (seriesList[i].company === company) {
@@ -73,6 +104,15 @@ function removeSeries(company) {
 	if (ind < 0) { return false; }
 	seriesList.splice(ind, 1);
 	return true;
+}
+
+
+function removeStockBox (company) {
+	$('.name').each(function () {
+		if ($(this).text() === company) {
+			$(this).parent().parent().remove();
+		}
+	});
 }
 
 
@@ -95,7 +135,7 @@ function stockDataCallback (data) {
 	// execution will halt after removeSeries returns false.
 	$('.x-button').on('click', function () {
 		var xButton = $(this);
-		if (removeSeries(xButton.parent().siblings('.name').text())) {
+		if (removeSeries(xButton.parent().siblings('.name').text(), true)) {
 			drawChart();
 		}
 		// Remove box regardless if series was found.
