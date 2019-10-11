@@ -1,4 +1,4 @@
-An app to chart stocks. Written by David Mason (https://www.freecodecamp.com/djmot) for FreeCodeCamp.
+An app to chart stocks written for FreeCodeCamp.
 
 User Story: I can view a graph displaying the recent trend lines for each added stock.
 
